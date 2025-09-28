@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LDA Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css">
+    <style>
+        /* --- Einstein's Chalkboard & Cigar Lounge Theme (Dynamic & Responsive) --- */
+        :root {
+            --parchment: #fdf6e3;
+            --chalkboard-green: #2F4F4F;
+            --dark-brown: #5D4037;
+            --text-color: #3a2d21;
+            --border-color: #d2c8b3;
+            --accent-brown: #8B4513;
+            --olive-green: #556B2F;
+            --muted-red: #A52A2A;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            background-color: #f5f5f5;
+            background-image:
+                linear-gradient(rgba(120, 100, 80, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(120, 100, 80, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            padding: clamp(10px, 3vw, 20px);
+            color: var(--text-color);
+            transition: background-color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--parchment);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2), inset 0 0 40px rgba(255, 255, 255, 0.5);
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .header {
+            background-color: var(--chalkboard-green);
+            color: var(--parchment);
+            padding: clamp(20px, 5vw, 30px);
+            text-align: center;
+            border-bottom: 4px double #bfa98b;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 6vw, 2.8rem);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            opacity: 0.9;
+            font-style: italic;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .input-section,
+        .output-section {
+            padding: clamp(15px, 4vw, 30px);
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 4vw, 1.8rem);
+            color: var(--dark-brown);
+            margin-bottom: 25px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .section-title .icon {
+            stroke: var(--dark-brown);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-brown);
+        }
+
+        .form-control,
+        .point-input input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #bfa98b;
+            border-radius: 2px;
+            font-size: 16px;
+            background-color: #fffcf2;
+            color: var(--text-color);
+            box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .form-control:focus,
+        .point-input input:focus {
+            outline: none;
+            border-color: var(--accent-brown);
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.15);
+        }
+
+        .data-input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .class-input {
+            background: transparent;
+            border: 1px dashed #a08c72;
+            border-radius: 4px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .class-input:hover {
+            border-style: solid;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .class-header {
+            font-weight: 500;
+            color: var(--dark-brown);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .point-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .add-point-btn,
+        .remove-point-btn,
+        .generate-btn,
+        .copy-btn,
+        .download-btn {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .add-point-btn:active,
+        .remove-point-btn:active,
+        .generate-btn:active,
+        .copy-btn:active,
+        .download-btn:active {
+            transform: scale(0.98) translateY(1px);
+            box-shadow: none !important;
+        }
+
+        .add-point-btn,
+        .remove-point-btn {
+            padding: 8px 16px;
+            border-width: 1px;
+            border-style: solid;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .add-point-btn:hover,
+        .remove-point-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.15);
+        }
+
+        .add-point-btn {
+            background: var(--olive-green);
+            color: white;
+            border-color: #4a5d28;
+            margin-top: 10px;
+        }
+
+        .remove-point-btn {
+            background: var(--muted-red);
+            color: white;
+            border-color: #8b2323;
+            padding: 4px 10px;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .generate-btn {
+            background: var(--dark-brown);
+            color: var(--parchment);
+            border: 1px solid #4e3629;
+            padding: 16px 32px;
+            border-radius: 2px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .generate-btn:hover {
+            background: #4e3629;
+            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            background-color: #9d8f80;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(253, 246, 227, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--parchment);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .output-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #e9e0cf;
+            border-radius: 4px;
+            padding: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 20px;
+            border: 1px solid transparent;
+            background: transparent;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: var(--dark-brown);
+            font-size: 1rem;
+        }
+
+        .tab-btn.active {
+            background: var(--parchment);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .latex-preview {
+            background: #1a1a1a;
+            color: #33ff33;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            border-radius: 2px;
+            max-height: 600px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 20px;
+            border: 1px solid #333;
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        .rendered-preview {
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            padding: clamp(10px, 3vw, 20px);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .copy-btn,
+        .download-btn {
+            background: var(--chalkboard-green);
+            color: white;
+            border: 1px solid #253e3e;
+            padding: 10px 20px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 10px 10px 0 0;
+            box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .copy-btn:hover,
+        .download-btn:hover {
+            background: #3b6363;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 2px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 2px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: #94a3b8;
+            padding: 60px 20px;
+            font-size: 1.1rem;
+            border: 2px dashed #e2e8f0;
+            border-radius: 4px;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* --- Responsive Breakpoints --- */
+        @media (max-width: 992px) {
+            .data-input-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .output-tabs {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .point-input {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .point-input input {
+                text-align: center;
+            }
+
+            .remove-point-btn {
+                margin-top: 5px;
+            }
+
+            .tab-btn {
+                font-size: 0.9rem;
+                padding: 10px;
+            }
+
+            .latex-preview {
+                font-size: 11px;
+            }
+            /* --- Rendered Preview Styles --- */
+.preview-content-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.rendered-preview h1,
+.rendered-preview h2 {
+    font-family: 'Playfair Display', serif;
+}
+
+.preview-title {
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--chalkboard-green);
+    color: var(--parchment);
+    border-radius: 4px;
+    border: 1px solid #4a5d28;
+}
+
+.preview-title h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.preview-frame {
+    margin: 25px 0;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fdfdfd;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.preview-frametitle {
+    color: var(--dark-brown);
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.preview-text {
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.preview-math {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f8f8;
+    border-radius: 2px;
+    border-left: 3px solid var(--dark-brown);
+}
+
+.preview-table-container {
+    margin: 15px 0;
+    overflow-x: auto;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid #eee;
+}
+
+.preview-table th,
+.preview-table td {
+    padding: 10px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.preview-table th {
+    background: #f1f5f9;
+    font-weight: 500;
+    border-bottom: 2px solid var(--border-color);
+}
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧮 LDA Calculator </h1>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="section-title">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
+                    </svg>
+                    Data Input
+                </div>
+
+                <div class="data-input-grid">
+                    <div class="class-input">
+                        <div class="class-header">
+                            <label for="class1Name">Class 1 Name:</label>
+                            <input type="text" id="class1Name" class="form-control" value="Male"
+                                placeholder="e.g., Male">
+                        </div>
+                        <div id="class1Points">
+                            <!-- Points will be added here dynamically -->
+                        </div>
+                        <button class="add-point-btn" onclick="addPoint('class1')">+ Add Point</button>
+                    </div>
+
+                    <div class="class-input">
+                        <div class="class-header">
+                            <label for="class2Name">Class 2 Name:</label>
+                            <input type="text" id="class2Name" class="form-control" value="Female"
+                                placeholder="e.g., Female">
+                        </div>
+                        <div id="class2Points">
+                            <!-- Points will be added here dynamically -->
+                        </div>
+                        <button class="add-point-btn" onclick="addPoint('class2')">+ Add Point</button>
+                    </div>
+                </div>
+
+                <button class="generate-btn" onclick="generateLatex()">
+                    <span class="btn-text">Calculate</span>
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span>Generating...</span>
+                    </div>
+                </button>
+
+                <div id="messages"></div>
+            </div>
+
+            <div class="output-section">
+                <div class="section-title">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                        </path>
+                    </svg>
+                    Preview
+                </div>
+
+                <div class="output-tabs">
+                    <button class="tab-btn active" onclick="showTab('latex')">LaTeX Code</button>
+                    <button class="tab-btn" onclick="showTab('rendered')">Math Preview</button>
+                </div>
+
+                <div id="latex-tab" class="tab-content active">
+                    <div class="preview-placeholder">
+                        <p>🎯 Enter your data points and click "Calculate" to see the code here</p>
+                    </div>
+                </div>
+
+                <div id="rendered-tab" class="tab-content">
+                    <div class="preview-placeholder">
+                        <p>📊 Mathematical formulas will be rendered here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize with sample data
+        const sampleData = {
+            class1: [[3, 4], [2, 3], [4, 5], [3, 3]],
+            class2: [[7, 8], [6, 7], [8, 9], [7, 7]]
+        };
+
+        let pointCounters = { class1: 0, class2: 0 };
+
+        function initializeData() {
+            // Clear existing points
+            document.getElementById('class1Points').innerHTML = '';
+            document.getElementById('class2Points').innerHTML = '';
+            pointCounters = { class1: 0, class2: 0 };
+
+            // Add sample data
+            sampleData.class1.forEach(point => {
+                addPointWithData('class1', point[0], point[1]);
+            });
+            sampleData.class2.forEach(point => {
+                addPointWithData('class2', point[0], point[1]);
+            });
+        }
+
+        function addPoint(className) {
+            addPointWithData(className, '', '');
+        }
+
+        function addPointWithData(className, x = '', y = '') {
+            const pointsContainer = document.getElementById(`${className}Points`);
+            const pointId = `${className}_${pointCounters[className]++}`;
+
+            const pointDiv = document.createElement('div');
+            pointDiv.className = 'point-input';
+            pointDiv.innerHTML = `
+                <input type="number" step="0.1" placeholder="X coordinate" value="${x}" id="${pointId}_x">
+                <input type="number" step="0.1" placeholder="Y coordinate" value="${y}" id="${pointId}_y">
+                <button class="remove-point-btn" onclick="removePoint('${pointId}')">×</button>
+            `;
+
+            pointsContainer.appendChild(pointDiv);
+        }
+
+        function removePoint(pointId) {
+            const pointElement = document.getElementById(`${pointId}_x`).parentNode;
+            pointElement.remove();
+        }
+
+        function collectData() {
+            const class1Name = document.getElementById('class1Name').value || 'Class1';
+            const class2Name = document.getElementById('class2Name').value || 'Class2';
+
+            const class1Points = [];
+            const class2Points = [];
+
+            // Collect class1 points
+            const class1Container = document.getElementById('class1Points');
+            const class1Inputs = class1Container.querySelectorAll('.point-input');
+            class1Inputs.forEach(pointDiv => {
+                const xInput = pointDiv.querySelector('input[placeholder="X coordinate"]');
+                const yInput = pointDiv.querySelector('input[placeholder="Y coordinate"]');
+                const x = parseFloat(xInput.value);
+                const y = parseFloat(yInput.value);
+                if (!isNaN(x) && !isNaN(y)) {
+                    class1Points.push([x, y]);
+                }
+            });
+
+            // Collect class2 points
+            const class2Container = document.getElementById('class2Points');
+            const class2Inputs = class2Container.querySelectorAll('.point-input');
+            class2Inputs.forEach(pointDiv => {
+                const xInput = pointDiv.querySelector('input[placeholder="X coordinate"]');
+                const yInput = pointDiv.querySelector('input[placeholder="Y coordinate"]');
+                const x = parseFloat(xInput.value);
+                const y = parseFloat(yInput.value);
+                if (!isNaN(x) && !isNaN(y)) {
+                    class2Points.push([x, y]);
+                }
+            });
+
+            return {
+                class1Name,
+                class2Name,
+                class1Data: class1Points,
+                class2Data: class2Points
+            };
+        }
+
+        function showMessage(message, type = 'error') {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
+            setTimeout(() => {
+                messagesDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function setLoading(loading) {
+            const btn = document.querySelector('.generate-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const loadingDiv = btn.querySelector('.loading');
+
+            if (loading) {
+                btn.disabled = true;
+                btnText.style.display = 'none';
+                loadingDiv.style.display = 'flex';
+            } else {
+                btn.disabled = false;
+                btnText.style.display = 'block';
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        async function generateLatex() {
+            const data = collectData();
+
+            // Validate data
+            if (data.class1Data.length < 2 || data.class2Data.length < 2) {
+                showMessage('Please enter at least 2 points for each class.', 'error');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const response = await fetch('https://backend-luze.onrender.com/api/latex-string', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                displayLatex(result.latex);
+                showMessage('LaTeX presentation generated successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(`Error generating LaTeX: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function displayLatex(latexCode) {
+            // Update LaTeX tab
+            const latexTab = document.getElementById('latex-tab');
+            latexTab.innerHTML = `
+                <div class="latex-preview">${latexCode}</div>
+                <button class="copy-btn" onclick="copyToClipboard()">📋 Copy LaTeX</button>
+                <button class="download-btn" onclick="downloadLatex()">💾 Download .tex</button>
+            `;
+
+            // Store latex for later use
+            window.currentLatex = latexCode;
+
+            // Update rendered tab with basic math rendering
+            updateRenderedPreview(latexCode);
+        }
+
+        function updateRenderedPreview(latexCode) {
+            const renderedTab = document.getElementById('rendered-tab');
+
+            // Parse the LaTeX content to extract structure and math
+            const parsedContent = parseLatexContent(latexCode);
+
+            let previewHtml = '<div class="rendered-preview">';
+            previewHtml += '<div class="preview-content-wrapper">';
+
+            parsedContent.forEach((section, sectionIndex) => {
+                if (section.type === 'title') {
+                    previewHtml += `<div class="preview-title">`;
+                    previewHtml += `<h1>${escapeHtml(section.content)}</h1>`;
+                    previewHtml += `</div>`;
+                } else if (section.type === 'frame') {
+                    previewHtml += `<div class="preview-frame">`;
+                    previewHtml += `<h2 class="preview-frametitle">${escapeHtml(section.title)}</h2>`;
+
+                    section.content.forEach((item, itemIndex) => {
+                        if (item.type === 'text') {
+                            previewHtml += `<p class="preview-text">${escapeHtml(item.content)}</p>`;
+                        } else if (item.type === 'math') {
+                            previewHtml += `<div class="preview-math">`;
+                            previewHtml += `<div id="math-${sectionIndex}-${itemIndex}"></div>`;
+                            previewHtml += `</div>`;
+                        } else if (item.type === 'table') {
+                            previewHtml += `<div class="preview-table-container">`;
+                            previewHtml += `<table class="preview-table">${item.content}</table>`;
+                            previewHtml += `</div>`;
+                        }
+                    });
+
+                    previewHtml += `</div>`;
+                }
+            });
+
+            previewHtml += '</div></div>';
+            renderedTab.innerHTML = previewHtml;
+
+            // Render all math expressions (this part remains the same)
+            parsedContent.forEach((section, sectionIndex) => {
+                if (section.type === 'frame') {
+                    section.content.forEach((item, itemIndex) => {
+                        if (item.type === 'math') {
+                            try {
+                                const element = document.getElementById(`math-${sectionIndex}-${itemIndex}`);
+                                if (element) {
+                                    katex.render(item.content, element, {
+                                        displayMode: true,
+                                        throwOnError: false,
+                                        fleqn: true,
+                                        macros: {
+                                            "\\text": "\\textrm"
+                                        }
+                                    });
+                                }
+                            } catch (e) {
+                                console.log('KaTeX rendering error:', e);
+                                const element = document.getElementById(`math-${sectionIndex}-${itemIndex}`);
+                                if (element) {
+                                    element.innerHTML = `<code style="background: #fee2e2; padding: 5px; border-radius: 4px; color: #dc2626;">${escapeHtml(item.content)}</code>`;
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+
+        function parseLatexContent(latexCode) {
+            const sections = [];
+            const lines = latexCode.split('\n');
+            let currentFrame = null;
+            let currentContent = [];
+            let inMathBlock = false;
+            let mathContent = '';
+            let inTable = false;
+            let tableContent = '';
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+
+                // Extract title
+                if (line.includes('\\title{')) {
+                    const titleMatch = line.match(/\\title\{(.+?)\}/);
+                    if (titleMatch) {
+                        sections.push({
+                            type: 'title',
+                            content: titleMatch[1].replace(/\\\\/g, ' ')
+                        });
+                    }
+                }
+
+                // Start of frame
+                else if (line.includes('\\begin{frame}')) {
+                    if (currentFrame) {
+                        // Save previous frame
+                        currentFrame.content = currentContent;
+                        sections.push(currentFrame);
+                    }
+
+                    // Extract frame title
+                    const titleMatch = line.match(/\\begin\{frame\}\{(.+?)\}/);
+                    currentFrame = {
+                        type: 'frame',
+                        title: titleMatch ? titleMatch[1] : 'Untitled',
+                        content: []
+                    };
+                    currentContent = [];
+                }
+
+                // End of frame
+                else if (line.includes('\\end{frame}')) {
+                    if (currentFrame) {
+                        // Add any remaining content
+                        if (inMathBlock && mathContent.trim()) {
+                            currentContent.push({
+                                type: 'math',
+                                content: mathContent.trim()
+                            });
+                            inMathBlock = false;
+                            mathContent = '';
+                        }
+                        if (inTable && tableContent.trim()) {
+                            currentContent.push({
+                                type: 'table',
+                                content: parseTableContent(tableContent)
+                            });
+                            inTable = false;
+                            tableContent = '';
+                        }
+
+                        currentFrame.content = currentContent;
+                        sections.push(currentFrame);
+                        currentFrame = null;
+                        currentContent = [];
+                    }
+                }
+
+                // Math blocks
+                else if (line.includes('\\[') || inMathBlock) {
+                    if (line.includes('\\[')) {
+                        inMathBlock = true;
+                        mathContent = line.replace('\\[', '').trim();
+                    } else if (line.includes('\\]')) {
+                        mathContent += ' ' + line.replace('\\]', '').trim();
+                        currentContent.push({
+                            type: 'math',
+                            content: mathContent.trim()
+                        });
+                        inMathBlock = false;
+                        mathContent = '';
+                    } else {
+                        mathContent += ' ' + line;
+                    }
+                }
+
+                // Tables
+                else if (line.includes('\\begin{tabular}') || inTable) {
+                    if (line.includes('\\begin{tabular}')) {
+                        inTable = true;
+                        tableContent = line;
+                    } else if (line.includes('\\end{tabular}')) {
+                        tableContent += '\n' + line;
+                        currentContent.push({
+                            type: 'table',
+                            content: parseTableContent(tableContent)
+                        });
+                        inTable = false;
+                        tableContent = '';
+                    } else {
+                        tableContent += '\n' + line;
+                    }
+                }
+
+                // Regular text content
+                else if (currentFrame && line && !line.startsWith('%') && !line.startsWith('\\') && line.length > 2) {
+                    currentContent.push({
+                        type: 'text',
+                        content: line
+                    });
+                }
+            }
+
+            return sections;
+        }
+
+        function parseTableContent(tableLatex) {
+            // Simple table parser - converts LaTeX table to HTML
+            let html = '';
+            const lines = tableLatex.split('\n');
+            let inHeader = true;
+
+            for (const line of lines) {
+                if (line.includes('\\toprule') || line.includes('\\midrule') || line.includes('\\bottomrule')) {
+                    continue;
+                }
+                if (line.includes('&') && line.includes('\\\\')) {
+                    const cells = line.replace('\\\\', '').split('&').map(cell => cell.trim());
+                    const tag = inHeader ? 'th' : 'td';
+                    const style = inHeader ? 'background: #f1f5f9; font-weight: 600; padding: 12px; border-bottom: 2px solid #4facfe;' : 'padding: 10px; border-bottom: 1px solid #e2e8f0;';
+
+                    html += '<tr>';
+                    cells.forEach(cell => {
+                        html += `<${tag} style="${style}">${escapeHtml(cell)}</${tag}>`;
+                    });
+                    html += '</tr>';
+                    inHeader = false;
+                }
+            }
+
+            return html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyToClipboard() {
+            if (window.currentLatex) {
+                navigator.clipboard.writeText(window.currentLatex).then(() => {
+                    showMessage('LaTeX code copied to clipboard!', 'success');
+                }).catch(() => {
+                    showMessage('Could not copy to clipboard. Please select and copy manually.', 'error');
+                });
+            }
+        }
+
+        function downloadLatex() {
+            if (window.currentLatex) {
+                const blob = new Blob([window.currentLatex], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'lda_presentation.tex';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showMessage('LaTeX file downloaded successfully!', 'success');
+            }
+        }
+
+        function showTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeData();
+        });
+    </script>
+</body>
+
+
+</html>
+
